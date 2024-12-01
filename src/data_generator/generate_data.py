@@ -80,45 +80,47 @@ class DataGenerator:
     def populate_conexao(self, num_por_usuario, usuarios):
         print("\nPopulando conexao...")
 
-        conexoes = set()
+        conexoes = []
+        conexoes_existentes = []
 
         for usuario in usuarios:
+            usuarios_possiveis = usuarios.copy()
+            usuarios_possiveis.remove(usuario)
+
             for _ in range(num_por_usuario):
                 user_id_1 = usuario
-                user_id_2 = usuario
-                while user_id_1 == user_id_2:
-                    user_id_2 = random.choice(usuarios)
-                
+                user_id_2 = random.choice(usuarios_possiveis)
                 data_amizade = self.fake.date_between(start_date='-1y', end_date='today')
                 
-                while ((user_id_1, user_id_2, data_amizade) in conexoes) or ((user_id_2, user_id_1, data_amizade) in conexoes):
-                    user_id_2 = random.choice(usuarios)
-                    while user_id_1 == user_id_2:
-                        user_id_2 = random.choice(usuarios)
-
-                conexoes.add((user_id_1, user_id_2, data_amizade))
+                while (user_id_1, user_id_2) in conexoes_existentes or (user_id_2, user_id_1) in conexoes_existentes:
+                    usuarios_possiveis.remove(user_id_2)
+                    user_id_2 = random.choice(usuarios_possiveis)
+                
+                conexoes.append((user_id_1, user_id_2, data_amizade))
+                conexoes_existentes.append((user_id_1, user_id_2))
 
         self.db.execute_query("""
             INSERT INTO conexao (user_id_1, user_id_2, data_amizade)
             VALUES (%s, %s, %s)
-        """, list(conexoes))
+        """, conexoes)
 
-        return list(conexoes)
+        return conexoes
 
     def populate_post_u(self, num_posts_user, usuarios):
         print("\nPopulando post_u...")
 
         posts = []
         posts_db = []
+        i = 1
 
         for usuario in usuarios:
-            for i in range(num_posts_user):
+            for _ in range(num_posts_user):
                 post_id = i
                 tipo_midia = random.choice(["image", "video", "text"])
                 conteudo = self.fake.text(max_nb_chars=300)
                 user_id_postou = usuario
                 data_post = self.fake.date_between(start_date='-1y', end_date='today')
-
+                i = i + 1
                 posts.append((post_id, tipo_midia, conteudo, user_id_postou, data_post))
                 posts_db.append((tipo_midia, conteudo, user_id_postou, data_post))
 
@@ -133,6 +135,7 @@ class DataGenerator:
         print("\nPopulando curtida_u...")
 
         curtidas = []
+        curtidas_existentes = []
 
         for _ in range(num_curtidas):
             conexao = random.choice(conexoes)
@@ -142,8 +145,18 @@ class DataGenerator:
             post = random.choice(posts_possiveis)
             post_id = post[0]
 
-            data_curtida = self.fake.date_between(start_date='-1y', end_date='today')
+            data_curtida = self.fake.date_between(start_date=conexao[2], end_date='today')
+
+            while (user_id, post_id) in curtidas_existentes:
+                conexao = random.choice(conexoes)
+                user_id = conexao[0]
+
+                posts_possiveis = [post for post in posts if post[3] == user_id]
+                post = random.choice(posts_possiveis)
+                post_id = post[0]
+
             curtidas.append((user_id, post_id, data_curtida))
+            curtidas_existentes.append((user_id, post_id))
 
         self.db.execute_query("""
             INSERT INTO curtida_u (user_id, post_id, data_curtida)
