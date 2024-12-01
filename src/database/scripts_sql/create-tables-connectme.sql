@@ -35,7 +35,7 @@ CREATE TABLE post_u (
     FOREIGN KEY (user_id_postou) REFERENCES usuario(user_id)
 );
 
-CREATE TABLE post_m (
+CREATE TABLE post_g (
     post_id INT AUTO_INCREMENT PRIMARY KEY,
     tipo_midia VARCHAR(50) NOT NULL,
     conteudo TEXT NOT NULL,
@@ -68,30 +68,12 @@ CREATE TABLE mensagem_g (
     FOREIGN KEY (user_id_recebe, grupo_id) REFERENCES usuario_grupo(user_id, grupo_id)
 );
 
-CREATE TABLE conexao (
-    user_id_1 VARCHAR(255),
-    user_id_2 VARCHAR(255),
-    data_amizade TIMESTAMP NOT NULL,
-    PRIMARY KEY (user_id_1, user_id_2),
-    FOREIGN KEY (user_id_1) REFERENCES usuario(user_id),
-    FOREIGN KEY (user_id_2) REFERENCES usuario(user_id)
-);
-
 CREATE TABLE comentario_u (
+    comentario_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id VARCHAR(255),
     post_id INT,
     conteudo TEXT NOT NULL,
     data_postagem TIMESTAMP NOT NULL,
-    PRIMARY KEY (user_id, post_id),
-    FOREIGN KEY (user_id) REFERENCES usuario(user_id),
-    FOREIGN KEY (post_id) REFERENCES post_u(post_id)
-);
-
-CREATE TABLE curtida_u (
-    user_id VARCHAR(255),
-    post_id INT,
-    data_curtida TIMESTAMP NOT NULL,
-    PRIMARY KEY (user_id, post_id),
     FOREIGN KEY (user_id) REFERENCES usuario(user_id),
     FOREIGN KEY (post_id) REFERENCES post_u(post_id)
 );
@@ -104,7 +86,16 @@ CREATE TABLE comentario_g (
     grupo_id INT NOT NULL,
     data_postagem TIMESTAMP NOT NULL,
     FOREIGN KEY (user_id, grupo_id) REFERENCES usuario_grupo(user_id, grupo_id),
-    FOREIGN KEY (post_id) REFERENCES post_m(post_id)
+    FOREIGN KEY (post_id) REFERENCES post_g(post_id)
+);
+
+CREATE TABLE curtida_u (
+    user_id VARCHAR(255),
+    post_id INT,
+    data_curtida TIMESTAMP NOT NULL,
+    PRIMARY KEY (user_id, post_id),
+    FOREIGN KEY (user_id) REFERENCES usuario(user_id),
+    FOREIGN KEY (post_id) REFERENCES post_u(post_id)
 );
 
 CREATE TABLE curtida_g (
@@ -112,8 +103,17 @@ CREATE TABLE curtida_g (
     post_id INT,
     data_curtida TIMESTAMP NOT NULL,
     PRIMARY KEY (user_id, post_id),
-    FOREIGN KEY (user_id, grupo_id) REFERENCES usuario_grupo(user_id, grupo_id),
-    FOREIGN KEY (post_id) REFERENCES post_m(post_id)
+    FOREIGN KEY (user_id) REFERENCES usuario(user_id),
+    FOREIGN KEY (post_id) REFERENCES post_g(post_id)
+);
+
+CREATE TABLE conexao (
+    user_id_1 VARCHAR(255),
+    user_id_2 VARCHAR(255),
+    data_amizade TIMESTAMP NOT NULL,
+    PRIMARY KEY (user_id_1, user_id_2),
+    FOREIGN KEY (user_id_1) REFERENCES usuario(user_id),
+    FOREIGN KEY (user_id_2) REFERENCES usuario(user_id)
 );
 
 CREATE TABLE tema (

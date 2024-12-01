@@ -70,11 +70,11 @@ CREATE TABLE mensagem_g (
 );
 
 CREATE TABLE comentario_u (
+    comentario_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id VARCHAR(255),
     post_id INT,
     conteudo TEXT NOT NULL,
     data_postagem TIMESTAMP NOT NULL,
-    PRIMARY KEY (user_id, post_id),
     FOREIGN KEY (user_id) REFERENCES usuario(user_id),
     FOREIGN KEY (post_id) REFERENCES post_u(post_id)
 );

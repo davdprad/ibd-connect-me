@@ -19,15 +19,18 @@ def generate_data():
     generator = DataGenerator(database=database)
 
     usuarios = generator.populate_usuario(n=1000)
-    conexoes = generator.populate_conexao(num_por_usuario=3, usuarios=usuarios)
     # grupos = generator.populate_grupo(n=200, usuarios=usuarios)
-    # temas = generator.populate_tema(n=200)
+    temas = generator.populate_tema(n=500)
+    
+    generator.populate_interesse_tema(usuarios=usuarios, temas=temas)
 
     # usuario_grupo = generator.populate_usuario_grupo(usuarios=usuarios, grupos=grupos)
 
+    conexoes = generator.populate_conexao(num_por_usuario=3, usuarios=usuarios)
     post_u = generator.populate_post_u(num_posts_user=3, usuarios=usuarios)
     generator.populate_curtida_u(num_curtidas=2000, conexoes=conexoes, posts=post_u)
     generator.populate_mensagem_u(num_mensagens=2000, conexoes=conexoes)
+    generator.populate_comentario_u(num_comentarios=2000, conexoes=conexoes, posts=post_u)
 
     database.close_connection()
 

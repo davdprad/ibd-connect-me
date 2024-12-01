@@ -182,6 +182,29 @@ class DataGenerator:
             VALUES (%s, %s, %s, %s, %s)
         """, mensagens_u)
 
+    def populate_comentario_u(self, num_comentarios, conexoes, posts):
+        print("\nPopulando comentario_u...")
+
+        comen = []
+
+        for _ in range(num_comentarios):
+            conexao = random.choice(conexoes)
+            user_id = conexao[0]
+            
+            posts_possiveis = [post for post in posts if post[3] == user_id]
+            post = random.choice(posts_possiveis)
+            post_id = post[0]
+
+            data_curtida = self.fake.date_between(start_date=conexao[2], end_date='today')
+            conteudo = self.fake.text(max_nb_chars=300)
+
+            comen.append((user_id, post_id, conteudo, data_curtida))
+
+        self.db.execute_query("""
+            INSERT INTO comentario_u (user_id, post_id, conteudo, data_postagem)
+            VALUES (%s, %s, %s, %s)
+        """, comen)
+
     def populate_post_g(self, n, usuarios):
         posts = []
         for _ in range(n):
@@ -238,17 +261,30 @@ class DataGenerator:
         """, mensagens)
 
     def populate_tema(self, n):
-        temas = [(self.fake.word().capitalize(),) for _ in range(n)]
-        self.db.execute_query("INSERT INTO tema (nome) VALUES (%s)", temas)
+        print("\nPopulando tema...")
 
-        results = self.db.execute_query("SELECT tema_id FROM connect_me.tema")
-        return [row[0] for row in results]
+        temas = []
+
+        for _ in range(n):
+            temas.append((self.fake.word().capitalize(),))
+
+        self.db.execute_query("""INSERT INTO tema (nome) VALUES (%s)""", temas)
+
+        return list(range(1, n+1))
 
     def populate_interesse_tema(self, usuarios, temas):
+        print("\nPopulando interesse_tema...")
+
         interesses = []
+
         for user_id in usuarios:
-            tema_id = random.choice(temas)
-            interesses.append((user_id, tema_id))
+            temas_disponiveis = temas.copy()
+            num_interesses = random.randint(1, 3)
+
+            for _ in range(num_interesses):
+                tema_id = random.choice(temas_disponiveis)
+                interesses.append((user_id, tema_id))
+                temas_disponiveis.remove(tema_id)
 
         self.db.execute_query("""
             INSERT INTO interesse_tema (user_id, tema_id)
