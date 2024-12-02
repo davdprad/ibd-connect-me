@@ -1,4 +1,6 @@
-USE db_connect_me;
+CREATE DATABASE connect_me;
+
+USE connect_me;
 
 CREATE TABLE usuario (
     user_id VARCHAR(255) PRIMARY KEY,
@@ -14,6 +16,7 @@ CREATE TABLE grupo (
     nome VARCHAR(255) NOT NULL,
     biografia TEXT,
     user_id_criou VARCHAR(255) NOT NULL,
+    data_criacao TIMESTAMP NOT NULL,
     FOREIGN KEY (user_id_criou) REFERENCES usuario(user_id)
 );
 

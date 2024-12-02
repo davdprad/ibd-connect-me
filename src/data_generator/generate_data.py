@@ -285,25 +285,56 @@ class DataGenerator:
             VALUES (%s, %s, %s)
         """, curtidas)
 
-    def populate_mensagem_g(self, usuarios, num_mensagens):
-        mensagens = []
-        for _ in range(num_mensagens):
-            user_id_envia = random.choice(usuarios)
-            user_id_recebe = random.choice(usuarios)
+    def populate_mensagem_g(self, usuario_grupo, num_mensagens):
+        print("\nPopulando mensagem_g...")
 
-            while user_id_envia == user_id_recebe:
-                user_id_recebe = random.choice(usuarios)
-            
+        mensagens_g = []
+
+        for _ in range(num_mensagens):
+            usuario_grupo_envia = random.choice(usuario_grupo)
+
+            u_grupo_possiveis = [grupo for grupo in usuario_grupo if grupo[1] == usuario_grupo_envia[1]]
+            u_grupo_possiveis.remove(usuario_grupo_envia)
+
+            usuario_grupo_recebe = random.choice(u_grupo_possiveis)
+
+            user_id_envia, user_id_recebe = usuario_grupo_envia[0], usuario_grupo_recebe[0]
+            grupo_id = usuario_grupo_envia[1]
+
             conteudo = self.fake.text(max_nb_chars=150)
-            data_envio = self.fake.date_this_year()
+            data_envio = self.fake.date_between(start_date=max(usuario_grupo_envia[2], usuario_grupo_recebe[2]), end_date='today')
             data_recebimento = self.fake.date_between(start_date=data_envio, end_date="+5d") if random.random() > 0.5 else None
             
-            mensagens.append((conteudo, user_id_envia, user_id_recebe, data_envio, data_recebimento))
+            mensagens_g.append((conteudo, user_id_envia, user_id_recebe, grupo_id, data_envio, data_recebimento))
 
         self.db.execute_query("""
-            INSERT INTO mensagem_g (conteudo, user_id_envia, user_id_recebe, data_envio, data_recebimento)
+            INSERT INTO mensagem_g (conteudo, user_id_envia, user_id_recebe, grupo_id, data_envio, data_recebimento)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, mensagens_g)
+
+    def populate_comentario_g(self, num_comentarios, usuario_grupo, posts):
+        print("\nPopulando comentario_g...")
+
+        comen = []
+
+        for _ in range(num_comentarios):
+            usuario_grupo_vez = random.choice(usuario_grupo)
+            user_id = usuario_grupo_vez[0]
+            grupo_id = usuario_grupo_vez[1]
+            
+            posts_possiveis = [post for post in posts if post[4] == grupo_id]
+            post = random.choice(posts_possiveis)
+            post_id = post[0]
+
+            data_curtida = self.fake.date_between(start_date=usuario_grupo_vez[2], end_date='today')
+            conteudo = self.fake.text(max_nb_chars=300)
+
+            comen.append((user_id, post_id, grupo_id, conteudo, data_curtida))
+
+        self.db.execute_query("""
+            INSERT INTO comentario_g (user_id, post_id, grupo_id, conteudo, data_postagem)
             VALUES (%s, %s, %s, %s, %s)
-        """, mensagens)
+        """, comen)
 
     def populate_tema(self, n):
         print("\nPopulando tema...")
@@ -335,3 +366,18 @@ class DataGenerator:
             INSERT INTO interesse_tema (user_id, tema_id)
             VALUES (%s, %s)
         """, interesses)
+
+    def populate_grupo_tema(self, grupos, temas):
+        print("\nPopulando grupo_tema...")
+
+        grupo_tema = []
+
+        for grupo in grupos:
+            grupo_id = grupo[0]
+            tema_id = random.choice(temas)
+            grupo_tema.append((grupo_id, tema_id))
+
+        self.db.execute_query("""
+            INSERT INTO grupo_tema (grupo_id, tema_id)
+            VALUES (%s, %s)
+        """, grupo_tema)
