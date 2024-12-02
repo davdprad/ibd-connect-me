@@ -59,7 +59,7 @@ class Database:
             else:
                 self.cursor.execute(query)
 
-            if query.strip().upper().startswith(("INSERT", "UPDATE", "DELETE", "DROP")):
+            if query.strip().upper().startswith(("INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "USE")):
                 self.conn.commit()
                 print("Query executed and changes committed successfully!")
             elif query.strip().upper().startswith(("SELECT", "SHOW")):

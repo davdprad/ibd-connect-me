@@ -16,13 +16,13 @@ class Main:
         """
         Cria as tabelas necessárias.
         """
-        print("\nCriando as tabelas do banco...")
         self.database.open_connection()
-        
+        print("\nCriando as tabelas do banco...")
+
         self.database.execute_query(query_create_tables)
+        print("Tabelas criadas com sucesso!\n")
 
         self.database.close_connection()
-        print("Tabelas criadas com sucesso!\n")
 
     def generate_data(self):
         """
