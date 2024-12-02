@@ -6,10 +6,10 @@ class Main:
     database = Database()
 
     def __init__(self):
-        # Executar para criar as tabelas do banco connect_me
-        self.create_db()
+        # Criar as tabelas do banco connect_me caso ainda não existam
+        # self.create_db()
 
-        # Executar para gerar os dados
+        # Gerar os dados ficticios para o banco de dados.
         self.generate_data()
 
     def create_db(self):
@@ -28,10 +28,13 @@ class Main:
         """
         Gera os dados necessários para o banco connect_me.
         """
+        # Abre a conexão com o banco de dados.
         self.database.open_connection()
         
+        # Instancia a classe geradora de dados
         generator = DataGenerator(database=self.database)
 
+        # Gera os dados ficticios para o banco de dados.
         usuarios = generator.populate_usuario(n=1000)
         grupos = generator.populate_grupo(n=200, usuarios=usuarios)
         temas = generator.populate_tema(n=500)
@@ -51,6 +54,7 @@ class Main:
         generator.populate_mensagem_g(usuario_grupo=usuario_grupo, num_mensagens=3000)
         generator.populate_comentario_g(num_comentarios=2000, usuario_grupo=usuario_grupo, posts=post_g)
         
+        # Fecha a conexão com o banco de dados.
         self.database.close_connection()
 
 main = Main()
