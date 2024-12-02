@@ -15,6 +15,7 @@ CREATE TABLE grupo (
     nome VARCHAR(255) NOT NULL,
     biografia TEXT,
     user_id_criou VARCHAR(255) NOT NULL,
+    data_criacao TIMESTAMP NOT NULL,
     FOREIGN KEY (user_id_criou) REFERENCES usuario(user_id)
 );
 

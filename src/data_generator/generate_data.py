@@ -47,28 +47,45 @@ class DataGenerator:
         return [user[0] for user in usuarios]
 
     def populate_grupo(self, n, usuarios):
+        print("\nPopulando grupo...")
+        
+        grupos_db = []
         grupos = []
-        for _ in range(n):
+
+        for i in range(n):
             nome = self.fake.word().capitalize() + " Group"
             biografia = self.fake.text(max_nb_chars=150)
             user_id_criou = random.choice(usuarios)
-            grupos.append((nome, biografia, user_id_criou))
+            data_criacao = self.fake.date_between(start_date='-2y', end_date='today')
+            grupos.append((i + 1, nome, biografia, user_id_criou, data_criacao))
+            grupos_db.append((nome, biografia, user_id_criou, data_criacao))
 
         self.db.execute_query("""
-            INSERT INTO grupo (nome, biografia, user_id_criou)
-            VALUES (%s, %s, %s)
-        """, grupos)
+            INSERT INTO grupo (nome, biografia, user_id_criou, data_criacao)
+            VALUES (%s, %s, %s, %s)
+        """, grupos_db)
 
-        results = self.db.execute_query("SELECT grupo_id FROM grupo")
-        return [row[0] for row in results]
+        return grupos
 
     def populate_usuario_grupo(self, usuarios, grupos):
+        print("\nPopulando usuario_grupo...")
+
         usuario_grupo = []
-        for _ in range(len(usuarios) * 2):
-            user_id = random.choice(usuarios)
-            grupo_id = random.choice(grupos)
-            data_ingresso = self.fake.date_between(start_date='-1y', end_date='today')
-            usuario_grupo.append((user_id, grupo_id, data_ingresso))
+
+        for grupo in grupos:
+            usuarios_disponiveis = usuarios.copy()
+
+            user_criador = grupo[3]
+            grupo_id = grupo[0]
+            data_ingresso_criador = grupo[4]
+            usuario_grupo.append((user_criador, grupo_id, data_ingresso_criador))
+            usuarios_disponiveis.remove(user_criador)
+
+            for _ in range(random.randint(3, 10)):
+                user_id = random.choice(usuarios_disponiveis)
+                data_ingresso = self.fake.date_between(start_date=data_ingresso_criador, end_date='today')
+                usuarios_disponiveis.remove(user_id)
+                usuario_grupo.append((user_id, grupo_id, data_ingresso))
 
         self.db.execute_query("""
             INSERT INTO usuario_grupo (user_id, grupo_id, data_ingresso)
@@ -77,7 +94,7 @@ class DataGenerator:
 
         return usuario_grupo
 
-    def populate_conexao(self, num_por_usuario, usuarios):
+    def populate_conexao(self, usuarios):
         print("\nPopulando conexao...")
 
         conexoes = []
@@ -87,7 +104,7 @@ class DataGenerator:
             usuarios_possiveis = usuarios.copy()
             usuarios_possiveis.remove(usuario)
 
-            for _ in range(num_por_usuario):
+            for _ in range(random.randint(3, 10)):
                 user_id_1 = usuario
                 user_id_2 = random.choice(usuarios_possiveis)
                 data_amizade = self.fake.date_between(start_date='-1y', end_date='today')
@@ -106,7 +123,7 @@ class DataGenerator:
 
         return conexoes
 
-    def populate_post_u(self, num_posts_user, usuarios):
+    def populate_post_u(self, usuarios):
         print("\nPopulando post_u...")
 
         posts = []
@@ -114,7 +131,7 @@ class DataGenerator:
         i = 1
 
         for usuario in usuarios:
-            for _ in range(num_posts_user):
+            for _ in range(random.randint(3, 10)):
                 post_id = i
                 tipo_midia = random.choice(["image", "video", "text"])
                 conteudo = self.fake.text(max_nb_chars=300)
@@ -205,35 +222,63 @@ class DataGenerator:
             VALUES (%s, %s, %s, %s)
         """, comen)
 
-    def populate_post_g(self, n, usuarios):
+    def populate_post_g(self, usuario_grupo, grupos):
+        print("\nPopulando post_g...")
+
         posts = []
-        for _ in range(n):
-            tipo_midia = random.choice(["image", "video", "text"])
-            conteudo = self.fake.text(max_nb_chars=300)
-            user_id_postou = random.choice(usuarios)
-            
-            grupo_user = self.db.execute_query(f"""SELECT grupo_id FROM usuario_grupo WHERE user_id = {user_id_postou} ORDER BY RAND() LIMIT 1""")
-            grupo_id = grupo_user[0]
+        posts_db = []
+        i = 0
 
-            data_ingresso = self.db.execute_query(f"""SELECT data_ingresso FROM usuario_grupo WHERE user_id = '{user_id_postou}'""")
-            data_post = self.fake.date_between(start_date=data_ingresso, end_date='today')
+        for grupo in grupos:
+            users_possiveis = [tuple for tuple in usuario_grupo if tuple[1] == grupo[0]]
 
-            posts.append((tipo_midia, conteudo, user_id_postou, grupo_id, data_post))
+            for _ in range(random.randint(3, 10)):
+                tipo_midia = random.choice(["image", "video", "text"])
+                conteudo = self.fake.text(max_nb_chars=300)
+                user_postou = random.choice(users_possiveis)
+                user_id_postou = user_postou[0]
+                grupo_id = grupo[0]
+                data_post = self.fake.date_between(start_date=user_postou[2], end_date='today')
+
+                i = i + 1
+                posts_db.append((tipo_midia, conteudo, user_id_postou, grupo_id, data_post))
+                posts.append((i, tipo_midia, conteudo, user_id_postou, grupo_id, data_post))
 
         self.db.execute_query("""
             INSERT INTO post_g (tipo_midia, conteudo, user_id_postou, grupo_id, data_post)
             VALUES (%s, %s, %s, %s, %s)
-        """, posts)
+        """, posts_db)
 
-        results = self.db.execute_query("SELECT post_id FROM post_g")
-        return [row[0] for row in results]
+        return posts
 
-    def populate_curtida_g(self, usuarios, posts):
+    def populate_curtida_g(self, num_curtidas, usuario_grupo, posts):
+        print("\nPopulando curtida_g...")
+
         curtidas = []
-        for user_id in usuarios:
-            post_id = random.choice(posts)
-            data_curtida = self.fake.date_this_year()
+        curtidas_existentes = []
+
+        for _ in range(num_curtidas):
+            usuario_grupo_da_vez = random.choice(usuario_grupo)
+            user_id = usuario_grupo_da_vez[0]
+            grupo_id = usuario_grupo_da_vez[1]
+            
+            posts_possiveis = [post for post in posts if post[4] == grupo_id]
+            post = random.choice(posts_possiveis)
+            post_id = post[0]
+
+            data_curtida = self.fake.date_between(start_date=usuario_grupo_da_vez[2], end_date='today')
+
+            while (user_id, post_id) in curtidas_existentes:
+                usuario_grupo_da_vez = random.choice(usuario_grupo)
+                user_id = usuario_grupo_da_vez[0]
+                grupo_id = usuario_grupo_da_vez[1]
+                
+                posts_possiveis = [post for post in posts if post[4] == grupo_id]
+                post = random.choice(posts_possiveis)
+                post_id = post[0]
+
             curtidas.append((user_id, post_id, data_curtida))
+            curtidas_existentes.append((user_id, post_id))
 
         self.db.execute_query("""
             INSERT INTO curtida_g (user_id, post_id, data_curtida)
@@ -270,7 +315,7 @@ class DataGenerator:
 
         self.db.execute_query("""INSERT INTO tema (nome) VALUES (%s)""", temas)
 
-        return list(range(1, n+1))
+        return list(range(1, n + 1))
 
     def populate_interesse_tema(self, usuarios, temas):
         print("\nPopulando interesse_tema...")
